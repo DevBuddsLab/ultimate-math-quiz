@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Math Quiz</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #1e1e2f;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 100vh;
+        padding: 20px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    #neon-title {
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        animation: neon 1.4s infinite;
+    }
+    @keyframes neon {
+        0%, 100% { color: #ff0000; }
+        14% { color: #ff9900; }
+        28% { color: #ffff00; }
+        42% { color: #00ff00; }
+        56% { color: #00ffff; }
+        70% { color: #0000ff; }
+        84% { color: #ff00ff; }
+    }
+    #question { font-size: 1.5em; margin: 10px; }
+    #timer { margin: 5px; font-size: 1.2em; }
+    #timer-bar { width: 400px; height: 20px; background: #555; margin: 5px; }
+    #timer-fill { width: 100%; height: 100%; background: #00cc99; }
+    #answer { font-size: 1.2em; padding: 5px; width: 100px; }
+    #submit { font-size: 1em; padding: 5px 10px; background: #00cc99; color: #fff; border: none; cursor: pointer; margin: 5px; }
+    #feedback { font-size: 1.2em; margin: 5px; min-height: 25px; }
+    #status { margin: 10px; font-size: 1em; }
+    #theme-toggle { margin: 5px; padding: 5px 10px; background: #00cc99; border: none; cursor: pointer; color: #fff; }
+</style>
+</head>
+<body>
+<div id="neon-title">🎇 Ultimate Math Quiz 🎇</div>
+<div id="question">Loading...</div>
+<div id="timer">⏱ Time Left: 20s</div>
+<div id="timer-bar"><div id="timer-fill"></div></div>
+<input type="number" id="answer" placeholder="Answer" autofocus>
+<button id="submit">Submit Answer</button>
+<div id="feedback"></div>
+<div id="status"></div>
+<button id="theme-toggle">Toggle Dark/Light Mode</button>
+
+<script>
+let score = 0;
+let lives = 3;
+let questionNumber = 1;
+let level = 1;
+let timeLimit = 20;
+let timeLeft = timeLimit;
+let timerInterval = null;
+let theme = 'dark';
+
+const neonColors = ["#ff0000","#ff9900","#ffff00","#00ff00","#00ffff","#0000ff","#ff00ff"];
+let neonIndex = 0;
+
+const questionEl = document.getElementById('question');
+const timerEl = document.getElementById('timer');
+const timerFillEl = document.getElementById('timer-fill');
+const answerEl = document.getElementById('answer');
+const feedbackEl = document.getElementById('feedback');
+const statusEl = document.getElementById('status');
+const submitBtn = document.getElementById('submit');
+const themeToggleBtn = document.getElementById('theme-toggle');
+const bodyEl = document.body;
+
+function animateNeon() {
+    document.getElementById('neon-title').style.color = neonColors[neonIndex];
+    neonIndex = (neonIndex + 1) % neonColors.length;
+}
+setInterval(animateNeon, 200);
+
+let num1, num2, operation, correctAnswer;
+
+function generateQuestion() {
+    if(score >= 10) level = 3;
+    else if(score >=5) level = 2;
+    else level = 1;
+
+    if(level == 1) { num1=Math.floor(Math.random()*10+1); num2=Math.floor(Math.random()*10+1); }
+    else if(level==2) { num1=Math.floor(Math.random()*50+1); num2=Math.floor(Math.random()*50+1); }
+    else { num1=Math.floor(Math.random()*100+1); num2=Math.floor(Math.random()*100+1); }
+
+    const operations = ['+', '-', '*', '/'];
+    operation = operations[Math.floor(Math.random()*4)];
+    if(operation=='/') num1 = num1 * num2;
+
+    if(operation=='+') correctAnswer = num1 + num2;
+    else if(operation=='-') correctAnswer = num1 - num2;
+    else if(operation=='*') correctAnswer = num1 * num2;
+    else correctAnswer = Math.floor(num1 / num2);
+
+    questionEl.textContent = `${num1} ${operation} ${num2} = ?`;
+    answerEl.value='';
+    feedbackEl.textContent='';
+    updateStatus();
+    startTimer();
+}
+
+function startTimer(){
+    clearInterval(timerInterval);
+    timeLeft = timeLimit;
+    updateTimer();
+    timerInterval = setInterval(()=>{
+        timeLeft--;
+        updateTimer();
+        if(timeLeft<=0){
+            clearInterval(timerInterval);
+            handleAnswer('timeout');
+        }
+    },1000);
+}
+
+function updateTimer(){
+    timerEl.textContent = `⏱ Time Left: ${timeLeft}s`;
+    const ratio = Math.max(timeLeft/timeLimit,0);
+    timerFillEl.style.width = (ratio*100)+'%';
+    if(ratio>0.5) timerFillEl.style.backgroundColor='#00cc99';
+    else if(ratio>0.2) timerFillEl.style.backgroundColor='#ffcc00';
+    else timerFillEl.style.backgroundColor='#ff4444';
+}
+
+function submitAnswer(){
+    clearInterval(timerInterval);
+    handleAnswer(answerEl.value);
+}
+
+function handleAnswer(answer){
+    let userAnswer = parseInt(answer);
+    if(answer==='timeout'){
+        lives--;
+        feedbackEl.style.color='#ffcc00';
+        feedbackEl.textContent="⏰ Time's Up! -1 life";
+    } else if(userAnswer===correctAnswer){
+        score++;
+        feedbackEl.style.color='#00ff66';
+        feedbackEl.textContent='✅ Correct! +1 point';
+    } else {
+        lives--;
+        feedbackEl.style.color='#ff4444';
+        feedbackEl.textContent=`❌ Wrong! Correct was ${correctAnswer} -1 life`;
+    }
+    setTimeout(()=>{ feedbackEl.textContent=''; },1000);
+
+    questionNumber++;
+    updateStatus();
+
+    if(lives<=0){
+        feedbackEl.style.color='#ff5555';
+        feedbackEl.textContent=`🎉 Game Over! Score: ${score}`;
+        setTimeout(()=>{ location.reload(); },2000);
+    } else {
+        setTimeout(generateQuestion,500);
+    }
+}
+
+function updateStatus(){
+    statusEl.textContent=`Lives: ${lives} | Score: ${score} | Level: ${level}`;
+}
+
+submitBtn.addEventListener('click', submitAnswer);
+answerEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitAnswer(); });
+
+themeToggleBtn.addEventListener('click', ()=>{
+    if(theme==='dark'){
+        theme='light';
+        bodyEl.style.backgroundColor='#f2f2f2';
+        bodyEl.style.color='#000';
+        answerEl.style.backgroundColor='#fff';
+        answerEl.style.color='#000';
+    } else {
+        theme='dark';
+        bodyEl.style.backgroundColor='#1e1e2f';
+        bodyEl.style.color='#fff';
+        answerEl.style.backgroundColor='#2e2e3e';
+        answerEl.style.color='#fff';
+    }
+});
+
+// Start the first question
+generateQuestion();
+</script>
+</body>
+</html>
