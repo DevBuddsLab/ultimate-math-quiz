@@ -23,14 +23,6 @@ Ultimate Math Quiz is a fun and interactive web-based math game inspired by the 
 6. The game ends when all lives are lost.
 7. You can toggle between dark/light theme by using the button or clicking T!
 
-## Hosting
-
-You can host this game for free using GitHub Pages:
-
-1. Create a new GitHub repository.
-2. Upload the `index.html` file.
-3. Go to **Settings → Pages → Source → main branch → /root**.
-4. Save the settings and access your live game URL.
 
 ## Technologies Used
 
